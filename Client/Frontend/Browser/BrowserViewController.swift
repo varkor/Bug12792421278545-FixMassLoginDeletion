@@ -51,6 +51,7 @@ class BrowserViewController: UIViewController {
     private let webViewContainerToolbar = UIView()
     private var findInPageBar: FindInPageBar?
     private let findInPageContainer = UIView()
+    private var keyboardIsVisible = false
 
     lazy private var customSearchEngineButton: UIButton = {
         let searchButton = UIButton()
@@ -268,12 +269,22 @@ class BrowserViewController: UIViewController {
         // Re-show toolbar which might have been hidden during scrolling (prior to app moving into the background)
         scrollController.showToolbars(animated: false)
     }
+    
+    func SELKeyboardDidAppear() {
+        keyboardIsVisible = true
+    }
+    
+    func SELKeyboardDidDisappear() {
+        keyboardIsVisible = false
+    }
 
     deinit {
         NSNotificationCenter.defaultCenter().removeObserver(self, name: BookmarkStatusChangedNotification, object: nil)
         NSNotificationCenter.defaultCenter().removeObserver(self, name: UIApplicationWillResignActiveNotification, object: nil)
         NSNotificationCenter.defaultCenter().removeObserver(self, name: UIApplicationWillEnterForegroundNotification, object: nil)
         NSNotificationCenter.defaultCenter().removeObserver(self, name: UIApplicationDidEnterBackgroundNotification, object: nil)
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillShowNotification, object: nil)
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillHideNotification, object: nil)
     }
 
     override func viewDidLoad() {
@@ -284,6 +295,8 @@ class BrowserViewController: UIViewController {
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(BrowserViewController.SELappWillResignActiveNotification), name: UIApplicationWillResignActiveNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(BrowserViewController.SELappDidBecomeActiveNotification), name: UIApplicationDidBecomeActiveNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(BrowserViewController.SELappDidEnterBackgroundNotification), name: UIApplicationDidEnterBackgroundNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(BrowserViewController.SELKeyboardDidAppear), name: UIKeyboardWillShowNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(BrowserViewController.SELKeyboardDidDisappear), name: UIKeyboardWillHideNotification, object: nil)
         KeyboardHelper.defaultHelper.addDelegate(self)
 
         log.debug("BVC adding footer and header…")
@@ -3195,15 +3208,20 @@ extension BrowserViewController: FindInPageBarDelegate, FindInPageHelperDelegate
     func findInPage(findInPage: FindInPageBar, didTextChange text: String) {
         find(text, function: "find")
     }
+    
+    func findInPage(findInPage: FindInPageBar?, text: String, function: String) {
+        UIView.setAnimationsEnabled(keyboardIsVisible)
+        findInPageBar?.endEditing(true)
+        UIView.setAnimationsEnabled(true)
+        find(text, function: function)
+    }
 
     func findInPage(findInPage: FindInPageBar, didFindNextWithText text: String) {
-        findInPageBar?.endEditing(true)
-        find(text, function: "findNext")
+        self.findInPage(findInPageBar, text: text, function: "findNext")
     }
 
     func findInPage(findInPage: FindInPageBar, didFindPreviousWithText text: String) {
-        findInPageBar?.endEditing(true)
-        find(text, function: "findPrevious")
+        self.findInPage(findInPageBar, text: text, function: "findPrevious")
     }
 
     func findInPageDidPressClose(findInPage: FindInPageBar) {
