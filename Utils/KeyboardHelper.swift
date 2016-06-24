@@ -9,11 +9,13 @@ import Foundation
  * The keyboard state at the time of notification.
  */
 public struct KeyboardState {
+    public let showing: Bool
     public let animationDuration: Double
     public let animationCurve: UIViewAnimationCurve
     private let userInfo: [NSObject: AnyObject]
 
-    private init(_ userInfo: [NSObject: AnyObject]) {
+    private init(_ userInfo: [NSObject: AnyObject], showing: Bool) {
+        self.showing = showing
         self.userInfo = userInfo
         animationDuration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as! Double
         // HACK: UIViewAnimationCurve doesn't expose the keyboard animation used (curveValue = 7),
@@ -93,7 +95,7 @@ public class KeyboardHelper: NSObject {
 
     func SELkeyboardWillShow(notification: NSNotification) {
         if let userInfo = notification.userInfo {
-            currentState = KeyboardState(userInfo)
+            currentState = KeyboardState(userInfo, showing: true)
             for weakDelegate in delegates {
                 weakDelegate.delegate?.keyboardHelper(self, keyboardWillShowWithState: currentState!)
             }
@@ -102,7 +104,7 @@ public class KeyboardHelper: NSObject {
 
     func SELkeyboardDidShow(notification: NSNotification) {
         if let userInfo = notification.userInfo {
-            currentState = KeyboardState(userInfo)
+            currentState = KeyboardState(userInfo, showing: true)
             for weakDelegate in delegates {
                 weakDelegate.delegate?.keyboardHelper(self, keyboardDidShowWithState: currentState!)
             }
@@ -111,7 +113,7 @@ public class KeyboardHelper: NSObject {
 
     func SELkeyboardWillHide(notification: NSNotification) {
         if let userInfo = notification.userInfo {
-            currentState = KeyboardState(userInfo)
+            currentState = KeyboardState(userInfo, showing: false)
             for weakDelegate in delegates {
                 weakDelegate.delegate?.keyboardHelper(self, keyboardWillHideWithState: currentState!)
             }
