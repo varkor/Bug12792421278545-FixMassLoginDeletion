@@ -204,21 +204,20 @@ class TabManager : NSObject {
         }
     }
     
-    func swapTabs(one: Tab, _ another: Tab) {
+    func moveTabToIndex(tab: Tab, index: Int) {
         assert(NSThread.isMainThread())
         
-        guard let index = tabs.indexOf(one), with = tabs.indexOf(another) else {
+        guard let fromIndex = tabs.indexOf(tab) else {
             return
         }
         
-        let tempTab = tabs[index]
-        tabs[index] = tabs[with]
-        tabs[with] = tempTab
+        let previouslySelectedTab = selectedTab
         
-        if _selectedIndex == index {
-            _selectedIndex = with
-        } else if selectedIndex == with {
-            _selectedIndex = index
+        tabs.removeAtIndex(fromIndex)
+        tabs.insert(tab, atIndex: index)
+        
+        if let previouslySelectedTab = previouslySelectedTab, previousSelectedIndex = tabs.indexOf(previouslySelectedTab) {
+            _selectedIndex = previousSelectedIndex
         }
         
         storeChanges()

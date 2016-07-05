@@ -10,7 +10,7 @@ import WebKit
     TODO
     > Tab visuals can get duplicated
     > Tabs can be dragged outside of their container
-    > Drag visual state (shadow) doesn't always apply when selecting a tab during the long press
+    > Drag visual state (shadow) doesn't always apply when selecting a tab during the long press (when page needs to load)
     > Separator lines need to disappear while dragging (or something similar)
     > Dragged tab isn't centred perfectly horizontally on finger
     > Occasional odd animation when releasing tab
@@ -359,7 +359,7 @@ extension TopTabsViewController: UICollectionViewDataSource {
     }
     
     @objc func collectionView(collectionView: UICollectionView, moveItemAtIndexPath sourceIndexPath: NSIndexPath, toIndexPath destinationIndexPath: NSIndexPath) {
-        tabManager.swapTabs(tabsToDisplay[sourceIndexPath.item], tabsToDisplay[destinationIndexPath.item])
+        tabManager.moveTabToIndex(tabsToDisplay[sourceIndexPath.item], index: destinationIndexPath.item)
     }
 }
 
