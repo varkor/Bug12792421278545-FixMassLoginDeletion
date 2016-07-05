@@ -210,11 +210,12 @@ class TabManager : NSObject {
         guard let fromIndex = tabs.indexOf(tab) else {
             return
         }
+        let toIndex = tabs.indexOf((tab.isPrivate ? privateTabs : normalTabs)[index]) ?? tabs.count - 1
         
         let previouslySelectedTab = selectedTab
         
         tabs.removeAtIndex(fromIndex)
-        tabs.insert(tab, atIndex: index)
+        tabs.insert(tab, atIndex: toIndex)
         
         if let previouslySelectedTab = previouslySelectedTab, previousSelectedIndex = tabs.indexOf(previouslySelectedTab) {
             _selectedIndex = previousSelectedIndex
