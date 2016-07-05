@@ -188,6 +188,7 @@ class TopTabsViewController: UIViewController {
     
     func privateTabTapped() {
         delegate?.topTabsDidPressPrivateTab()
+        print("HERE \(self.collectionView.visibleCells())")
         self.collectionView.reloadData()
         scrollToCurrentTab(false)
     }
@@ -231,8 +232,6 @@ class TopTabsViewController: UIViewController {
                     if let tabCell = collectionView.cellForItemAtIndexPath(indexPath) as? TopTabCell {
                         tabCell.isBeingDragged = true
                         self.draggedTab = tabCell
-                    } else {
-                        
                     }
                 }
             case .Changed:
@@ -244,8 +243,8 @@ class TopTabsViewController: UIViewController {
                 // Necessary to avoid the Swift compiler complaining about an expression being too complicated
 //                let boundsRight = collectionView.frame.width - (TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2)
 //                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, min(location.x, boundsRight))
-                location.x += self.collectionView.contentOffset.x + self.collectionView.contentInset.left
-//                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, location.x) 
+                  location.x += self.collectionView.contentOffset.x
+//                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, location.x)
                 location.y = self.collectionView.frame.height / 2
                 collectionView.updateInteractiveMovementTargetPosition(location)
             case .Ended:
@@ -376,6 +375,6 @@ extension TopTabsViewController: TabSelectionDelegate {
 
 extension TopTabsViewController : WKNavigationDelegate {
     func webView(webView: WKWebView, didFinishNavigation navigation: WKNavigation!) {
-        collectionView.reloadData()
+//        collectionView.reloadData()
     }
 }
