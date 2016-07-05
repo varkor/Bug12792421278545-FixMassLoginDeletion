@@ -33,8 +33,7 @@ class TopTabCell: UICollectionViewCell {
             bezierView.hidden = !selectedTab
             if style == Style.Light {
                 titleText.textColor = selectedTab ? UIColor.darkTextColor() : UIColor.lightTextColor()
-            }
-            else {
+            } else {
                 titleText.textColor = UIColor.lightTextColor()
             }
             favicon.alpha = selectedTab ? 1.0 : 0.6
@@ -68,8 +67,24 @@ class TopTabCell: UICollectionViewCell {
     private let bezierView: BezierView = {
         let bezierView = BezierView()
         bezierView.fillColor = TopTabsUX.TopTabsBackgroundNormalColor
+        bezierView.layer.shadowColor = UIColor.blackColor().CGColor
         return bezierView
     }()
+    
+    var isBeingDragged = false {
+        didSet {
+            if !isBeingDragged {
+                
+            }
+            guard isBeingDragged != oldValue else {
+                return
+            }
+            self.bezierView.layer.performTransitions(duration: 0.2, transitions: [
+                "shadowOpacity": (0, 1),
+                "shadowRadius": (0, 10)
+            ], reversed: !isBeingDragged)
+        }
+    }
     
     weak var delegate: TopTabCellDelegate?
     
@@ -143,7 +158,7 @@ class TopTabCell: UICollectionViewCell {
         guard seperatorLine else {
             return
         }
-        let context = UIGraphicsGetCurrentContext();
+        let context = UIGraphicsGetCurrentContext()
         CGContextSaveGState(context)
         CGContextSetLineCap(context, CGLineCap.Square)
         CGContextSetStrokeColorWithColor(context, UIColor.whiteColor().colorWithAlphaComponent(0.2).CGColor)
@@ -152,6 +167,23 @@ class TopTabCell: UICollectionViewCell {
         CGContextAddLineToPoint(context, 0, frame.size.height-TopTabsUX.BackgroundSeparatorLinePadding)
         CGContextStrokePath(context)
         CGContextRestoreGState(context)
+    }
+}
+
+extension CALayer {
+    func performTransitions(duration duration: CFTimeInterval, transitions: [String: (CGFloat, CGFloat)], reversed: Bool = false) {
+        let animationGroup = CAAnimationGroup()
+        animationGroup.animations = []
+        animationGroup.duration = duration
+        animationGroup.removedOnCompletion = false
+        animationGroup.fillMode = kCAFillModeForwards
+        for (property, (fromValue, toValue)) in transitions {
+            let animation = CABasicAnimation(keyPath: property)
+            animation.fromValue = !reversed ? fromValue : toValue
+            animation.toValue = !reversed ? toValue : fromValue
+            animationGroup.animations! += [animation]
+        }
+        self.addAnimation(animationGroup, forKey: nil)
     }
 }
 

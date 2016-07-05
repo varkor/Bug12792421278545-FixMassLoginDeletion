@@ -203,6 +203,26 @@ class TabManager : NSObject {
             tab.expireSnackbars()
         }
     }
+    
+    func swapTabs(one: Tab, _ another: Tab) {
+        assert(NSThread.isMainThread())
+        
+        guard let index = tabs.indexOf(one), with = tabs.indexOf(another) else {
+            return
+        }
+        
+        let tempTab = tabs[index]
+        tabs[index] = tabs[with]
+        tabs[with] = tempTab
+        
+        if _selectedIndex == index {
+            _selectedIndex = with
+        } else if selectedIndex == with {
+            _selectedIndex = index
+        }
+        
+        storeChanges()
+    }
 
     @available(iOS 9, *)
     func addTab(request: NSURLRequest! = nil, configuration: WKWebViewConfiguration! = nil, afterTab: Tab? = nil, isPrivate: Bool) -> Tab {

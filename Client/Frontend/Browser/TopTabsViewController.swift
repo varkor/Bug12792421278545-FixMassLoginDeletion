@@ -6,6 +6,16 @@ import Foundation
 import Shared
 import WebKit
 
+/*
+    TODO
+    > Tab visuals can get duplicated
+    > Tabs can be dragged outside of their container
+    > Drag visual state (shadow) doesn't always apply when selecting a tab during the long press
+    > Separator lines need to disappear while dragging (or something similar)
+    > Dragged tab isn't centred perfectly horizontally on finger
+    > Occasional odd animation when releasing tab
+*/
+
 struct TopTabsUX {
     static let TopTabsViewHeight: CGFloat = 40
     static let TopTabsBackgroundNormalColor = UIColor(red: 235/255, green: 235/255, blue: 235/255, alpha: 1)
@@ -75,6 +85,8 @@ class TopTabsViewController: UIViewController {
         return self.isPrivate ? tabManager.privateTabs : tabManager.normalTabs
     }
     
+    var tabDragInitialPosition = CGPointZero
+    
     init(tabManager: TabManager) {
         self.tabManager = tabManager
         super.init(nibName: nil, bundle: nil)
@@ -135,6 +147,10 @@ class TopTabsViewController: UIViewController {
         view.backgroundColor = UIColor.blackColor()
         updateTabCount(tabsToDisplay.count)
         tabsButton.applyTheme(Theme.NormalMode)
+        
+        if #available(iOS 9, *) {
+            self.view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(TopTabsViewController.tabLongPressed)))
+        }
     }
     
     func updateTabCount(count: Int, animated: Bool = true) {
@@ -192,6 +208,54 @@ class TopTabsViewController: UIViewController {
             // Padding is added to ensure the tab is completely visible (none of the tab is under the fader)
             let padFrame = frame.insetBy(dx: -(TopTabsUX.TopTabsBackgroundShadowWidth+TopTabsUX.FaderPading), dy: 0)
             collectionView.scrollRectToVisible(padFrame, animated: true)
+        }
+    }
+    
+    var draggedTab: TopTabCell?
+    var draggedIndexPath: NSIndexPath?
+    
+    @available(iOS 9, *)
+    func tabLongPressed(gestureRecogniser: UIGestureRecognizer) {
+        let releaseTab = {
+            if let draggedTab = self.draggedTab {
+                draggedTab.isBeingDragged = false
+                self.draggedTab = nil
+            }
+        }
+        switch gestureRecogniser.state {
+            case .Began:
+                if let indexPath = collectionView.indexPathForItemAtPoint(gestureRecogniser.locationInView(collectionView)) {
+                    self.draggedIndexPath = indexPath
+                    self.tabLayoutDelegate.tabSelectionDelegate?.didSelectTabAtIndex(indexPath.item)
+                    self.collectionView.layoutIfNeeded()
+                    if let tabCell = collectionView.cellForItemAtIndexPath(indexPath) as? TopTabCell {
+                        tabCell.isBeingDragged = true
+                        self.draggedTab = tabCell
+                    } else {
+                        
+                    }
+                }
+            case .Changed:
+                if let indexPath = self.draggedIndexPath {
+                    self.collectionView.beginInteractiveMovementForItemAtIndexPath(indexPath)
+                    self.draggedIndexPath = nil
+                }
+                var location = gestureRecogniser.locationInView(gestureRecogniser.view!)
+                // Necessary to avoid the Swift compiler complaining about an expression being too complicated
+//                let boundsRight = collectionView.frame.width - (TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2)
+//                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, min(location.x, boundsRight))
+                location.x += self.collectionView.contentOffset.x + self.collectionView.contentInset.left
+//                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, location.x) 
+                location.y = self.collectionView.frame.height / 2
+                collectionView.updateInteractiveMovementTargetPosition(location)
+            case .Ended:
+                collectionView.endInteractiveMovement()
+                releaseTab()
+            case .Cancelled, .Failed:
+                collectionView.cancelInteractiveMovement()
+                releaseTab()
+            case .Possible:
+                break
         }
     }
 }
@@ -292,6 +356,10 @@ extension TopTabsViewController: UICollectionViewDataSource {
     
     @objc func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return tabsToDisplay.count
+    }
+    
+    @objc func collectionView(collectionView: UICollectionView, moveItemAtIndexPath sourceIndexPath: NSIndexPath, toIndexPath destinationIndexPath: NSIndexPath) {
+        tabManager.swapTabs(tabsToDisplay[sourceIndexPath.item], tabsToDisplay[destinationIndexPath.item])
     }
 }
 

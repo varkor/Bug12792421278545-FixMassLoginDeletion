@@ -828,7 +828,7 @@ private class TabManagerDataSource: NSObject, UICollectionViewDataSource {
 }
 
 @objc protocol TabSelectionDelegate: class {
-    func didSelectTabAtIndex(index :Int)
+    func didSelectTabAtIndex(index: Int)
 }
 
 private class TabLayoutDelegate: NSObject, UICollectionViewDelegateFlowLayout {
