@@ -67,6 +67,9 @@ class Tab: NSObject {
     private var lastRequest: NSURLRequest? = nil
     var pendingScreenshot = false
     var url: NSURL?
+    /// This is a hack to avoid loading WebViews when a tab is being picked up to avoid what appears to be a compiler bug.
+    /// Hopefully we'll be able to remove this on a later occasion: ideally, we'd never need to delay the loading of a web view.
+    var delayLoad = false
 
     /// The last title shown by this tab. Used by the tab tray to show titles for zombie tabs.
     var lastTitle: String?
@@ -150,7 +153,7 @@ class Tab: NSObject {
     }
 
     func createWebview() {
-        if webView == nil {
+        if webView == nil && !delayLoad {
             assert(configuration != nil, "Create webview can only be called once")
             configuration!.userContentController = WKUserContentController()
             configuration!.preferences = WKPreferences()

@@ -217,17 +217,11 @@ class TopTabsViewController: UIViewController {
     
     @available(iOS 9, *)
     func tabLongPressed(gestureRecogniser: UIGestureRecognizer) {
-        let releaseTab = {
-            if let draggedTab = self.draggedTab {
-                draggedTab.isBeingDragged = false
-                self.draggedTab = nil
-            }
-        }
         switch gestureRecogniser.state {
             case .Began:
                 if let indexPath = collectionView.indexPathForItemAtPoint(gestureRecogniser.locationInView(collectionView)) {
                     self.draggedIndexPath = indexPath
-                    self.tabLayoutDelegate.tabSelectionDelegate?.didSelectTabAtIndex(indexPath.item)
+                    self.tabLayoutDelegate.tabSelectionDelegate?.didSelectTabAtIndex(indexPath.item, delayLoad: true)
                     self.collectionView.layoutIfNeeded()
                     if let tabCell = collectionView.cellForItemAtIndexPath(indexPath) as? TopTabCell {
                         tabCell.isBeingDragged = true
@@ -247,12 +241,16 @@ class TopTabsViewController: UIViewController {
 //                location.x = max(TopTabsUX.TopTabsBackgroundShadowWidth + TopTabsUX.TabWidth / 2, location.x)
                 location.y = self.collectionView.frame.height / 2
                 collectionView.updateInteractiveMovementTargetPosition(location)
-            case .Ended:
-                collectionView.endInteractiveMovement()
-                releaseTab()
-            case .Cancelled, .Failed:
-                collectionView.cancelInteractiveMovement()
-                releaseTab()
+            case .Ended, .Cancelled, .Failed:
+                if gestureRecogniser.state == .Ended {
+                    collectionView.endInteractiveMovement()
+                } else {
+                    collectionView.cancelInteractiveMovement()
+                }
+                if let draggedTab = self.draggedTab {
+                    draggedTab.isBeingDragged = false
+                    self.draggedTab = nil
+                }
             case .Possible:
                 break
         }
@@ -359,12 +357,19 @@ extension TopTabsViewController: UICollectionViewDataSource {
     
     @objc func collectionView(collectionView: UICollectionView, moveItemAtIndexPath sourceIndexPath: NSIndexPath, toIndexPath destinationIndexPath: NSIndexPath) {
         tabManager.moveTabToIndex(tabsToDisplay[sourceIndexPath.item], index: destinationIndexPath.item)
+        let tab = tabsToDisplay[destinationIndexPath.item]
+        if tab.delayLoad {
+            tab.delayLoad = false
+            tab.createWebview()
+            (self.delegate as? BrowserViewController)?.setupWebView(forTab: tab)
+        }
     }
 }
 
 extension TopTabsViewController: TabSelectionDelegate {
-    func didSelectTabAtIndex(index: Int) {
+    func didSelectTabAtIndex(index: Int, delayLoad: Bool = false) {
         let tab = tabsToDisplay[index]
+        tab.delayLoad = delayLoad
         tabManager.selectTab(tab)
         collectionView.reloadData()
         collectionView.setNeedsDisplay()
@@ -375,6 +380,6 @@ extension TopTabsViewController: TabSelectionDelegate {
 
 extension TopTabsViewController : WKNavigationDelegate {
     func webView(webView: WKWebView, didFinishNavigation navigation: WKNavigation!) {
-//        collectionView.reloadData()
+        collectionView.reloadData()
     }
 }

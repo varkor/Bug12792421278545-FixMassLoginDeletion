@@ -583,7 +583,7 @@ class BrowserViewController: UIViewController {
     }
 
     private func showQueuedAlertIfAvailable() {
-        if var queuedAlertInfo = tabManager.selectedTab?.dequeueJavascriptAlertPrompt() {
+        if let queuedAlertInfo = tabManager.selectedTab?.dequeueJavascriptAlertPrompt() {
             let alertController = queuedAlertInfo.alertController()
             alertController.delegate = self
             presentViewController(alertController, animated: true, completion: nil)
@@ -2017,7 +2017,7 @@ extension BrowserViewController: TabManagerDelegate {
             wv.removeFromSuperview()
         }
 
-        if let tab = selected, webView = tab.webView {
+        if let tab = selected {
             updateURLBarDisplayURL(tab)
 
             if tab.isPrivate {
@@ -2030,42 +2030,9 @@ extension BrowserViewController: TabManagerDelegate {
             ReaderModeHandlers.readerModeCache = readerModeCache
 
             scrollController.tab = selected
-            webViewContainer.addSubview(webView)
-            webView.snp_makeConstraints { make in
-                make.top.equalTo(webViewContainerToolbar.snp_bottom)
-                make.left.right.bottom.equalTo(self.webViewContainer)
-            }
-            webView.accessibilityLabel = NSLocalizedString("Web content", comment: "Accessibility label for the main web content view")
-            webView.accessibilityIdentifier = "contentView"
-            webView.accessibilityElementsHidden = false
-
-            if let url = webView.URL?.absoluteString {
-                // Don't bother fetching bookmark state for about/sessionrestore and about/home.
-                if AboutUtils.isAboutURL(webView.URL) {
-                    // Indeed, because we don't show the toolbar at all, don't even blank the star.
-                } else {
-                    profile.bookmarks.modelFactory >>== { [weak tab] in
-                        $0.isBookmarked(url)
-                            .uponQueue(dispatch_get_main_queue()) {
-                            guard let isBookmarked = $0.successValue else {
-                                log.error("Error getting bookmark status: \($0.failureValue).")
-                                return
-                            }
-
-                            tab?.isBookmarked = isBookmarked
-
-
-                            if !AppConstants.MOZ_MENU {
-                                self.toolbar?.updateBookmarkStatus(isBookmarked)
-                                self.urlBar.updateBookmarkStatus(isBookmarked)
-                            }
-                        }
-                    }
-                }
-            } else {
-                // The web view can go gray if it was zombified due to memory pressure.
-                // When this happens, the URL is nil, so try restoring the page upon selection.
-                tab.reload()
+            
+            if tab.webView != nil {
+                setupWebView(forTab: tab)
             }
         }
 
@@ -2099,6 +2066,49 @@ extension BrowserViewController: TabManagerDelegate {
         }
 
         updateInContentHomePanel(selected?.url)
+    }
+    
+    func setupWebView(forTab tab: Tab) {
+        guard let webView = tab.webView else {
+            return
+        }
+        webViewContainer.addSubview(webView)
+        webView.snp_makeConstraints { make in
+            make.top.equalTo(webViewContainerToolbar.snp_bottom)
+            make.left.right.bottom.equalTo(self.webViewContainer)
+        }
+        webView.accessibilityLabel = NSLocalizedString("Web content", comment: "Accessibility label for the main web content view")
+        webView.accessibilityIdentifier = "contentView"
+        webView.accessibilityElementsHidden = false
+        
+        if let url = webView.URL?.absoluteString {
+            // Don't bother fetching bookmark state for about/sessionrestore and about/home.
+            if AboutUtils.isAboutURL(webView.URL) {
+                // Indeed, because we don't show the toolbar at all, don't even blank the star.
+            } else {
+                profile.bookmarks.modelFactory >>== { [weak tab] in
+                    $0.isBookmarked(url)
+                        .uponQueue(dispatch_get_main_queue()) {
+                            guard let isBookmarked = $0.successValue else {
+                                log.error("Error getting bookmark status: \($0.failureValue).")
+                                return
+                            }
+                            
+                            tab?.isBookmarked = isBookmarked
+                            
+                            
+                            if !AppConstants.MOZ_MENU {
+                                self.toolbar?.updateBookmarkStatus(isBookmarked)
+                                self.urlBar.updateBookmarkStatus(isBookmarked)
+                            }
+                    }
+                }
+            }
+        } else {
+            // The web view can go gray if it was zombified due to memory pressure.
+            // When this happens, the URL is nil, so try restoring the page upon selection.
+            tab.reload()
+        }
     }
 
     func tabManager(tabManager: TabManager, didCreateTab tab: Tab) {

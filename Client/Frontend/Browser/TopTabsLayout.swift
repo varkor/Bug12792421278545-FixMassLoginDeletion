@@ -24,7 +24,7 @@ class TopTabsLayoutDelegate: NSObject, UICollectionViewDelegateFlowLayout {
     }
     
     @objc func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        tabSelectionDelegate?.didSelectTabAtIndex(indexPath.row)
+        tabSelectionDelegate?.didSelectTabAtIndex(indexPath.row, delayLoad: false)
     }
 }
 
