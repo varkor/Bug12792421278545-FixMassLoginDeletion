@@ -8,11 +8,8 @@ import WebKit
 
 /*
     TODO
-    > Tab visuals can get duplicated
     > Tabs can be dragged outside of their container
-    > Drag visual state (shadow) doesn't always apply when selecting a tab during the long press (when page needs to load)
     > Separator lines need to disappear while dragging (or something similar)
-    > Dragged tab isn't centred perfectly horizontally on finger
     > Occasional odd animation when releasing tab
 */
 
@@ -378,7 +375,7 @@ extension TopTabsViewController: TabSelectionDelegate {
     }
 }
 
-extension TopTabsViewController : WKNavigationDelegate {
+extension TopTabsViewController: WKNavigationDelegate {
     func webView(webView: WKWebView, didFinishNavigation navigation: WKNavigation!) {
         collectionView.reloadData()
     }
