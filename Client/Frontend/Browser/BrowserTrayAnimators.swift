@@ -147,6 +147,7 @@ private extension BrowserToTrayAnimator {
 
         // Hide views we don't want to show during the animation in the BVC
         bvc.homePanelController?.view.hidden = true
+        bvc.webViewContainerBackdrop.hidden = true
         bvc.toggleSnackBarVisibility(show: false)
         toggleWebViewVisibility(show: false, usingTabManager: bvc.tabManager)
         bvc.urlBar.isTransitioning = true
@@ -185,6 +186,7 @@ private extension BrowserToTrayAnimator {
 
                 bvc.toggleSnackBarVisibility(show: true)
                 toggleWebViewVisibility(show: true, usingTabManager: bvc.tabManager)
+                bvc.webViewContainerBackdrop.hidden = false
                 bvc.homePanelController?.view.hidden = false
 
                 bvc.urlBar.isTransitioning = false
